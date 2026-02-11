@@ -46,27 +46,51 @@ def get_chat_response(chat_history):
                for m in chat_history):
         chat_history.insert(0, identity_msg)
 
-    # 3) OpenRouter API call
+        # 3) OpenRouter API call
     try:
         payload = {
             "model": "openai/gpt-3.5-turbo",
             "messages": chat_history,
             "temperature": 0.7
         }
+
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "Content-Type": "application/json"
         }
-        resp = requests.post(OPENROUTER_BASE_URL, headers=headers, json=payload)
-        data = resp.json()
-        if "choices" in data:
-            return data["choices"][0]["message"]["content"]
+
+        print("Trying OpenRouter API...")
+
+        resp = requests.post(
+            OPENROUTER_BASE_URL,
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+
+        print("API STATUS CODE:", resp.status_code)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            if "choices" in data:
+                print("✅ USING OPENROUTER API")
+                return data["choices"][0]["message"]["content"]
+            else:
+                print("⚠ API returned unexpected structure:", data)
+
+        else:
+            print("❌ API FAILED")
+            print("Response:", resp.text)
+
     except Exception as e:
-        print("OpenRouter error:", e)
+        print("❌ OpenRouter exception:", e)
+
+    print("🔁 Falling back to Ollama (local Mistral)...")
 
     # 4) Fallback to local Ollama/Mistral
     try:
         history_text = "\n".join(f"{m['role']}: {m['content']}" for m in chat_history)
+
         prompt = (
             "You are Prometheus, the advanced AI career counselor developed by Ayush Kumar Singh and Heramb Pandey, "
             "students at Lovely Professional University. You answer based on the following career knowledge:\n\n"
@@ -75,19 +99,25 @@ def get_chat_response(chat_history):
             + history_text
             + "\nassistant:"
         )
+
         result = subprocess.run(
             ["ollama", "run", "mistral"],
             input=prompt,
             text=True,
+            encoding="utf-8",   # IMPORTANT for Windows
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
+
         if result.returncode == 0:
+            print("✅ USING OLLAMA")
             return result.stdout.strip()
         else:
-            print("Ollama error:", result.stderr)
+            print("❌ Ollama error:", result.stderr)
+
     except Exception as e:
-        print("Ollama exception:", e)
+        print("❌ Ollama exception:", e)
 
     return "Sorry, I’m having trouble right now. Please try again later."
+
 
