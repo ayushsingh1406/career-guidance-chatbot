@@ -9,29 +9,75 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("user-input").addEventListener("keypress", event => {
         if (event.key === "Enter") sendMessage();
     });
+
+    // Interactive Spotlight Effect for Glass Panel
+    document.addEventListener('mousemove', (e) => {
+        const panels = document.querySelectorAll('.glass-panel');
+        panels.forEach(panel => {
+            const rect = panel.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            panel.style.setProperty('--mouse-x', `${x}px`);
+            panel.style.setProperty('--mouse-y', `${y}px`);
+        });
+    });
+
+    // Ripple Effect for buttons
+    document.addEventListener('mousedown', function(e) {
+        const target = e.target.closest('button');
+        if (target) {
+            let ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            let rect = target.getBoundingClientRect();
+            ripple.style.left = `${e.clientX - rect.left - 15}px`;
+            ripple.style.top = `${e.clientY - rect.top - 15}px`;
+            target.appendChild(ripple);
+            setTimeout(() => { ripple.remove(); }, 600);
+        }
+    });
 });
+
+function appendMessage(text, sender) {
+    const chatBox = document.getElementById("chat-messages");
+    
+    // Create wrapper for alignment
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("message-wrapper", sender);
+    
+    // Create the actual bubble
+    const bubble = document.createElement("div");
+    bubble.classList.add("message-bubble", `message-${sender}`);
+    
+    // Use innerHTML to support markdown-like line breaks if needed, or just text
+    bubble.innerHTML = text.replace(/\n/g, "<br>");
+    
+    wrapper.appendChild(bubble);
+    chatBox.appendChild(wrapper);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    return bubble;
+}
 
 function sendMessage() {
     const userInput = document.getElementById("user-input");
     const message = userInput.value.trim();
     if (message === "") return;
 
-    const chatBox = document.getElementById("chat-messages");
-
-    // Show user message
-    const userDiv = document.createElement("div");
-    userDiv.classList.add("chat-message");
-    userDiv.style.color = "#9FE2BF"; // Customize user message color
-    userDiv.textContent = message;
-    chatBox.appendChild(userDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
+    // Show user message (Right aligned)
+    appendMessage(message, "user");
     userInput.value = "";
 
-    // Placeholder typing animation
-    const botDiv = document.createElement("div");
-    botDiv.classList.add("chat-message", "typing");
-    chatBox.appendChild(botDiv);
+    // Show typing indicator
+    const chatBox = document.getElementById("chat-messages");
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("message-wrapper", "bot");
+    
+    const typingBubble = document.createElement("div");
+    typingBubble.classList.add("message-bubble", "message-bot", "typing-indicator");
+    typingBubble.innerHTML = `<span></span><span></span><span></span>`;
+    
+    wrapper.appendChild(typingBubble);
+    chatBox.appendChild(wrapper);
     chatBox.scrollTop = chatBox.scrollHeight;
 
     // Fetch response from backend
@@ -42,18 +88,30 @@ function sendMessage() {
     })
     .then(response => response.json())
     .then(data => {
+        // Remove typing indicator
+        wrapper.remove();
+        
         lastBotResponse = data.response;
-        startTypingAnimation(botDiv, lastBotResponse); // Typing animation
+        // Append actual bot message
+        appendMessage(lastBotResponse, "bot");
+        
         if (isSpeakingEnabled) speakText(lastBotResponse);
     })
     .catch(() => {
-        startTypingAnimation(botDiv, "Oops! Something went wrong.");
+        wrapper.remove();
+        appendMessage("Oops! Something went wrong. Please check your connection or API keys.", "bot");
     });
 }
 
-
 function clearChat() {
-    document.getElementById("chat-messages").innerHTML = "";
+    const chatBox = document.getElementById("chat-messages");
+    chatBox.innerHTML = `
+        <div class="message-wrapper bot">
+          <div class="message-bubble message-bot">
+             Chat history cleared. How can I help you today?
+          </div>
+        </div>
+    `;
 }
 
 function toggleMicrophone() {
@@ -63,12 +121,11 @@ function toggleMicrophone() {
     if (!recognition) {
         recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.lang = 'en-US';
-        recognition.continuous = true;  // Keep recording until user clicks toggle again
-        recognition.interimResults = true; // Show text as user speaks
+        recognition.continuous = true;
+        recognition.interimResults = true;
 
         recognition.onresult = event => {
             let interimTranscript = '';
-
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
                     window.finalTranscript += event.results[i][0].transcript;
@@ -76,27 +133,24 @@ function toggleMicrophone() {
                     interimTranscript += event.results[i][0].transcript;
                 }
             }
-            // Display the confirmed text plus whatever is currently being spoken
             inputField.value = window.finalTranscript + interimTranscript;
         };
         
         recognition.onend = () => {
-            // Stop mic styling
-            micButton.style.color = "";
+            micButton.classList.remove("active");
             isMicEnabled = false;
         };
     }
 
     if (!isMicEnabled) {
-        // Start with whatever is already in the text box
         window.finalTranscript = inputField.value ? inputField.value + (inputField.value.endsWith(' ') ? '' : ' ') : '';
         isMicEnabled = true;
-        micButton.style.color = "red";
+        micButton.classList.add("active");
         recognition.start();
     } else {
         recognition.stop();
         isMicEnabled = false;
-        micButton.style.color = "";
+        micButton.classList.remove("active");
     }
 }
 
@@ -110,16 +164,25 @@ function speakText(text, onComplete) {
 }
 
 function toggleSpeech() {
-    let button = document.getElementById("speak-toggle");
+    let btn = document.getElementById("speak-toggle-btn");
+    let icon = document.getElementById("speak-toggle-icon");
+    
     isSpeakingEnabled = !isSpeakingEnabled;
-    button.classList.toggle("fa-volume-high");
-    button.classList.toggle("fa-volume-xmark");
-    button.style.color = isSpeakingEnabled ? "red" : "";
-    if (!isSpeakingEnabled) window.speechSynthesis.cancel();
+    
+    if (isSpeakingEnabled) {
+        icon.classList.replace("fa-volume-xmark", "fa-volume-high");
+        btn.classList.add("active");
+    } else {
+        icon.classList.replace("fa-volume-high", "fa-volume-xmark");
+        btn.classList.remove("active");
+        window.speechSynthesis.cancel();
+    }
 }
 
 function replayLastResponse() {
-    let replayIcon = document.getElementById("replay-speak");
+    let replayIcon = document.getElementById("replay-icon");
+    let btn = document.getElementById("replay-btn");
+    
     if (!lastBotResponse) return;
     if (isReplaying) {
         window.speechSynthesis.cancel();
@@ -127,32 +190,28 @@ function replayLastResponse() {
     } else {
         speakText(lastBotResponse, resetReplayIcon);
         replayIcon.classList.replace("fa-play", "fa-pause");
+        btn.classList.add("active");
         isReplaying = true;
     }
 }
 
 function resetReplayIcon() {
-    let replayIcon = document.getElementById("replay-speak");
+    let replayIcon = document.getElementById("replay-icon");
+    let btn = document.getElementById("replay-btn");
     replayIcon.classList.replace("fa-pause", "fa-play");
+    btn.classList.remove("active");
     isReplaying = false;
 }
 
-// Typing animation function
-function startTypingAnimation(element, text) {
-    let index = 0;
-    element.textContent = "";
-
-    const interval = setInterval(() => {
-        if (index < text.length) {
-            element.textContent += text.charAt(index);
-            index++;
-        } else {
-            clearInterval(interval);
-            element.classList.remove('typing');
-        }
-    }, 35); // Typing speed in ms
-}
-
 function toggleTheme() {
-    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.toggle('light-theme');
+    const icon = document.querySelector('.theme-icon');
+    
+    if (isLight) {
+        document.body.classList.remove('dark-theme');
+        icon.classList.replace('fa-moon', 'fa-sun');
+    } else {
+        document.body.classList.add('dark-theme');
+        icon.classList.replace('fa-sun', 'fa-moon');
+    }
 }

@@ -3,45 +3,78 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Career Chatbot</title>
+  <title>PROMETHEUS - Career AI</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 </head>
 
-<body>
-  <div class="chat-container">
-    <div class="chat-header">
-      <div class="theme-toggle">
-        <label class="switch">
-          <input type="checkbox" id="theme-switch" onchange="toggleTheme()">
-          <span class="slider round"></span>
-        </label>
+<body class="dark-theme">
+  <!-- Dynamic Background Elements -->
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+
+  <div class="app-wrapper">
+    <div class="chat-container glass-panel">
+      
+      <!-- Top Header -->
+      <div class="chat-header">
+        <div class="brand">
+          <div class="brand-icon">
+            <i class="fa-brands fa-slack"></i>
+          </div>
+          <div>
+            <h1>PROMETHEUS</h1>
+            <span class="status-indicator"><span class="dot"></span> Online</span>
+          </div>
+        </div>
+        
+        <div class="header-actions">
+          <button class="icon-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme">
+            <i class="fa-solid fa-moon theme-icon"></i>
+          </button>
+          <button class="icon-btn action-danger" onclick="clearChat()" title="Reset Chat">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
       </div>
 
-      <i class="fa-brands fa-slack icon"></i>
-      <h1>PROMETHEUS</h1>
-    </div>
-
-    <div class="chat-box" id="chat-messages"></div>
-
-    <div class="chat-input">
-      <i id="mic-toggle" class="fa-solid fa-microphone voice-icon" onclick="toggleMicrophone()"></i>
-      <input type="text" id="user-input" placeholder="Ask anything related to career" />
-      <button onclick="sendMessage()">Send</button>
-      <div class="tooltip">
-        <i class="fa-solid fa-trash clear-icon" onclick="clearChat()"></i>
-        <span class="tooltip-text">Clear Chat</span>
+      <!-- Chat Area -->
+      <div class="chat-box" id="chat-messages">
+        <!-- Initial Bot Greeting -->
+        <div class="message-wrapper bot">
+          <div class="message-bubble message-bot">
+             Hello! I am Prometheus, your AI Career Guide. How can I help you navigate your professional journey today?
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div id="speak" class="tooltip speech-toggle">
-      <i onclick="toggleSpeech()" id="speak-toggle" class="fa-solid fa-volume-high speak-icon"></i>
-      <span class="tooltip-text" id="speak-tooltip">Enable Speak</span>
-    </div>
+      <!-- Input Area -->
+      <div class="input-panel-wrapper">
+        <div class="action-dock">
+           <!-- Voice Synthesizer Toggle -->
+           <button class="icon-btn togglable" id="speak-toggle-btn" onclick="toggleSpeech()" title="Toggle Voice Responses">
+             <i id="speak-toggle-icon" class="fa-solid fa-volume-xmark"></i>
+           </button>
+           <!-- Replay Button -->
+           <button class="icon-btn" id="replay-btn" onclick="replayLastResponse()" title="Replay Last Response">
+             <i id="replay-icon" class="fa-solid fa-play"></i>
+           </button>
+        </div>
 
-    <div id="play" class="tooltip speech-toggle">
-      <i id="replay-speak" class="fa-solid fa-play speak-icon" onclick="replayLastResponse()"></i>
-      <span id="replay-tooltip" class="tooltip-text">Play Last Response</span>
+        <div class="input-glass-panel">
+          <button class="mic-btn" id="mic-toggle" onclick="toggleMicrophone()" title="Dictate Message">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+          
+          <input type="text" id="user-input" placeholder="Type or speak to Prometheus..." autocomplete="off" />
+          
+          <button class="send-btn" onclick="sendMessage()" title="Send">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
