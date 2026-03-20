@@ -9,34 +9,6 @@
 </head>
 
 <body>
-  <div class="menu-btn" onclick="toggleSidebar()">☰</div>
-
-  <div class="sidebar" id="sidebar">
-    <h2>⚙️ Features</h2>
-
-    <div class="skill-gap-analyzer">
-      <h3>Skill Gap Analyzer</h3>
-      <label for="currentSkills">Current Skills</label>
-      <textarea id="currentSkills" placeholder="e.g. HTML, CSS, JS"></textarea>
-      <label for="goal">Your Goal</label>
-      <textarea id="goal" placeholder="e.g. Full Stack Developer"></textarea>
-      <button onclick="analyzeSkills()">Analyze</button>
-      <button onclick="clearInputs()" style="margin-left: 10px; background-color: #ff4d4d;">Clear</button>
-      <div id="skillResult"></div>
-    </div>
-
-    <div class="job-trend-launcher" onclick="openJobTrendPopup()" title="View Job Field Trends">
-      <h3 class="job-trend-text">Job Trends</h3>
-    </div>
-
-    <!-- Mental Health Check Button -->
-    <div class="job-trend-launcher" onclick="openMentalHealthModal()">
-      <h3 class="job-trend-text">Mental Health Check</h3>
-    </div>
-  </div>
-
-  <div class="sidebar-blur-overlay"></div>
-
   <div class="chat-container">
     <div class="chat-header">
       <div class="theme-toggle">
@@ -73,35 +45,6 @@
     </div>
   </div>
 
-  <div id="jobTrendModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeJobTrendPopup()">&times;</span>
-      <h2>📊 Job Salary Trends</h2>
-      <input type="text" id="jobFieldInput" placeholder="Enter job field..." />
-      <button onclick="showJobTrends()">Show Trends</button>
-      <canvas id="salaryChart" width="400" height="300"></canvas>
-    </div>
-  </div>
-
-  <!-- Mental Health Modal -->
-  <div id="mentalHealthModal" class="modal">
-    <div class="modal-content-mental">
-      <span class="close-mental" onclick="closeMentalHealthModal()">&times;</span>
-      <h3>How are you feeling right now?</h3>
-      <select id="userMood">
-        <option value="">Select your mood</option>
-        <option value="happy">😊 Happy</option>
-        <option value="sad">😢 Sad</option>
-        <option value="excited">😃 Excited</option>
-        <option value="amazing">🌟 Amazing</option>
-        <option value="other">😐 Other</option>
-      </select>
-      <br><br>
-      <button onclick="analyzeMentalHealth()">Get Suggestion</button>
-      <div id="mentalHealthResult" style="margin-top: 15px;"></div>
-    </div>
-  </div>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
