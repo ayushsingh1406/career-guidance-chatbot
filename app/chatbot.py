@@ -1,32 +1,34 @@
+import os
 import requests
-import subprocess
 from config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL
-from app.intent_classifier import predict_intent  # Importing the predict_intent function
+from app.intent_classifier import predict_intent
 
-# Load career knowledge
-with open("app/career_knowledge.txt", "r", encoding="utf-8") as f:
+# Load career knowledge using a path relative to this file
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(_current_dir, "career_knowledge.txt"), "r", encoding="utf-8") as f:
     CAREER_KNOWLEDGE = f.read()
+
 
 def get_chat_response(chat_history):
     last = chat_history[-1]["content"].strip().lower()
 
     creator_keywords = [
-        "who created you", "who made you", "who are your developers", 
-        "who is your creator", "who built you", "developer", "developers", 
+        "who created you", "who made you", "who are your developers",
+        "who is your creator", "who built you", "developer", "developers",
         "created by", "made you", "your makers", "your builders", "your founders"
     ]
     if any(phrase in last for phrase in creator_keywords):
         return "I was developed by Ayush Singh and Heramb Pandey, both 20 years old, pursuing a B.Tech degree at Lovely Professional University."
 
     # 1) Use the predict_intent function to detect user intent
-    intent = predict_intent(last)  # Use the imported function to predict the intent
+    intent = predict_intent(last)
 
     # Inject detected intent as a system message
     intent_msg = {
         "role": "system",
         "content": f"Detected user intent: {intent}. Respond appropriately."
     }
-    if not any(m.get("role") == "system" and "Detected user intent" in m.get("content", "") 
+    if not any(m.get("role") == "system" and "Detected user intent" in m.get("content", "")
                for m in chat_history):
         chat_history.insert(0, intent_msg)
 
@@ -42,11 +44,11 @@ def get_chat_response(chat_history):
             "Always identify yourself as Prometheus when introducing yourself."
         )
     }
-    if not any(m.get("role") == "system" and "You are Prometheus" in m.get("content", "") 
+    if not any(m.get("role") == "system" and "You are Prometheus" in m.get("content", "")
                for m in chat_history):
         chat_history.insert(0, identity_msg)
 
-        # 3) OpenRouter API call
+    # 3) OpenRouter API call
     try:
         payload = {
             "model": "openai/gpt-3.5-turbo",
@@ -85,39 +87,4 @@ def get_chat_response(chat_history):
     except Exception as e:
         print("❌ OpenRouter exception:", e)
 
-    print("🔁 Falling back to Ollama (local Mistral)...")
-
-    # 4) Fallback to local Ollama/Mistral
-    try:
-        history_text = "\n".join(f"{m['role']}: {m['content']}" for m in chat_history)
-
-        prompt = (
-            "You are Prometheus, the advanced AI career counselor developed by Ayush Kumar Singh and Heramb Pandey, "
-            "students at Lovely Professional University. You answer based on the following career knowledge:\n\n"
-            + CAREER_KNOWLEDGE
-            + "\n\nChat history:\n"
-            + history_text
-            + "\nassistant:"
-        )
-
-        result = subprocess.run(
-            ["ollama", "run", "mistral"],
-            input=prompt,
-            text=True,
-            encoding="utf-8",   # IMPORTANT for Windows
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-
-        if result.returncode == 0:
-            print("✅ USING OLLAMA")
-            return result.stdout.strip()
-        else:
-            print("❌ Ollama error:", result.stderr)
-
-    except Exception as e:
-        print("❌ Ollama exception:", e)
-
-    return "Sorry, I’m having trouble right now. Please try again later."
-
-
+    return "Sorry, I'm having trouble connecting to the AI service right now. Please try again in a moment."
